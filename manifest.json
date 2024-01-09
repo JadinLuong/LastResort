@@ -1,0 +1,9 @@
+{
+  "name": "LastResort",
+  "version_number": "1.0.0",
+  "website_url": "",
+  "description": "Press P as a last resort! (You will explode, along with everything around you). Make sure everyone in the server has this mod installed for the best experience.",
+  "dependencies": [
+    "BepInEx-BepInExPack-5.4.2100"
+  ]
+}
