@@ -16,35 +16,31 @@ namespace LastResort.Patches
 
         public static PlayerControllerB player;
 
-        public static bool explodeTipShown;
+        public static bool explodeTipShown = false;
 
-        public static bool playerExploded;
+        public static bool playerExploded = false;
 
+        public static bool isPlayerReady = false;
 
-        [HarmonyPatch("Start")]
+        [HarmonyPatch("ConnectClientToPlayerObject")]
         [HarmonyPostfix]
-        public static void initialize(PlayerControllerB __instance)
+        public static void initializeClientToPlayerObject()
         {
-            if (NetworkManager.Singleton.LocalClientId == __instance.playerClientId)
-            {
-                lastResortLog.LogInfo("Initializing");
+            lastResortLog.LogInfo("Connected Client to Player Object");
 
-                player = __instance;
+            player = GameNetworkManager.Instance.localPlayerController;
 
-                LastResortHandler.Instance.LastResortAudioSource = player.itemAudio;
-                LastResortHandler.Instance.LastResortAudioClip = Resources.FindObjectsOfTypeAll<Landmine>()[0].mineTrigger;
+            LastResortHandler.Instance.LastResortAudioSource = player.itemAudio;
+            LastResortHandler.Instance.LastResortAudioClip = Resources.FindObjectsOfTypeAll<Landmine>()[0].mineTrigger;
 
-                explodeTipShown = false;
-
-                playerExploded = false;
-            }
+            isPlayerReady = true;
         }
 
         [HarmonyPatch("Update")]
         [HarmonyPostfix]
         public static async void PlayerControllerB_Update(PlayerControllerB __instance)
         {
-            if (NetworkManager.Singleton.LocalClientId == __instance.playerClientId)
+            if (isPlayerReady && !player.isPlayerDead && player == __instance)
             {
                 bool keyPressed = Keyboard.current[LastResortMod.explodeKey.Value].wasPressedThisFrame;
 
@@ -63,7 +59,7 @@ namespace LastResort.Patches
                 if (keyPressed && !playerExploded && explodeTipShown && !player.isPlayerDead)
                 {
                     playerExploded = true;
-                    LastResortHandler.Instance.PlayExplosionSoundServerRpc();
+                    LastResortHandler.Instance.PlayExplosionSoundServerRpc(player.playerUsername, player.transform.position);
                     await Task.Delay(500);
                     LastResortHandler.Instance.ExplodePositionServerRpc(player.transform.position);
                 }
@@ -79,11 +75,9 @@ namespace LastResort.Patches
 
         public AudioClip LastResortAudioClip;
 
-        public override void OnNetworkSpawn()
+        private void Awake()
         {
             Instance = this;
-
-            base.OnNetworkSpawn();
         }
 
         [ServerRpc(RequireOwnership = false)]
@@ -99,14 +93,16 @@ namespace LastResort.Patches
         }
 
         [ServerRpc(RequireOwnership = false)]
-        public void PlayExplosionSoundServerRpc()
+        public void PlayExplosionSoundServerRpc(string username, Vector3 position)
         {
-            PlayExplosionSoundClientRpc();
+            PlayExplosionSoundClientRpc(username, position);
         }
 
         [ClientRpc]
-        public void PlayExplosionSoundClientRpc()
+        public void PlayExplosionSoundClientRpc(string username, Vector3 position)
         {
+            LastResortMod.Log.LogInfo(username + " exploded!");
+            LastResortAudioSource.transform.position = position;
             LastResortAudioSource.PlayOneShot(LastResortAudioClip);
         }
     }

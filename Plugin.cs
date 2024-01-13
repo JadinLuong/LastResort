@@ -14,7 +14,7 @@ namespace LastResort
     {
         private const string modGUID = "LastResort";
         private const string modName = "LastResort";
-        private const string modVersion = "1.0.0";
+        private const string modVersion = "1.0.1";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
@@ -24,7 +24,7 @@ namespace LastResort
 
         public static ConfigEntry<Key> explodeKey;
 
-        public static Key defaultKey = Key.P;
+        public static Key defaultKey = Key.F11;
         
         void Awake()
         {
